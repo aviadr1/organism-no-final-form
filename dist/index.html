@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a1213"><meta name="description" content="Feed. Mutate. Divide. A living-body tower defense game where your biomass is your weapon.">
+<title>ORGANISM — The Hungry Garden</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230c1917'/%3E%3Cpath d='M9 39Q3 8 28 16T53 30Q64 54 36 53T9 39' fill='%23c7ee8d'/%3E%3Ccircle cx='35' cy='30' r='8' fill='%23285242'/%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<canvas id="world" aria-label="The Hungry Garden game arena. Move with WASD or arrow keys. Aim with the mouse." tabindex="0"></canvas>
+<div class="grain" aria-hidden="true"></div>
+<header>
+ <a class="brand" href="./" aria-label="Organism home"><span class="brand-symbol">✳</span><span>ORGANISM<small>THE HUNGRY GARDEN</small></span></a>
+ <div class="topstats">
+  <div class="stat biomass"><span class="eyebrow"><i></i> BIOMASS</span><strong id="mass">65<span> g</span></strong><div class="meter"><b id="massbar"></b></div></div>
+  <div class="stat neststat"><span class="eyebrow">NEST INTEGRITY</span><strong id="nest">100<span> %</span></strong><div class="meter red"><b id="nestbar"></b></div></div>
+  <div class="stat wavestat"><span class="eyebrow">HOSTILE WAVE</span><strong id="wave">01<span> / 06</span></strong><span class="small" id="waveinfo">Awaiting emergence</span></div>
+ </div>
+ <div class="utilities"><button id="sound" class="iconbutton" aria-label="Enable sound" title="Sound">♫<span class="soundoff">/</span></button><button id="pause" class="iconbutton" aria-label="Pause game" title="Pause (Esc)">Ⅱ</button></div>
+</header>
+<aside class="left-rail">
+ <div class="chapter"><span class="eyebrow">CONTAINMENT BREACH</span><h1>You are<br>the ecosystem.</h1><p>Consume the fallen.<br>Become something worse.</p></div>
+ <div class="objective"><span class="tinyindex">01 / OBJECTIVE</span><div class="objective-line"><span class="pulse-dot"></span><span>Protect the mother nest</span></div><p id="objective">Survive six waves. Leave nothing uneaten.</p></div>
+ <div class="evolution"><div class="row"><span class="tinyindex">EVOLUTION</span><span id="level">LV. 01</span></div><div class="xp-meter"><b id="xpbar"></b></div><p id="xptext">Feed to unlock a mutation</p><div id="mutations" class="mutations"><span class="empty-mutation">No adaptations. Yet.</span></div></div>
+</aside>
+<div class="sector"><span class="cross">+</span> SECTOR 07 <span class="sector-line"></span> <span>LIVING QUARANTINE</span></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="wave-banner"><span id="banner-kicker">HOSTILES DETECTED</span><strong id="banner-text">Wave 01</strong></div>
+<div class="arena-caption"><span class="pulse-dot"></span><span id="statusline">SPECIMEN VIABLE</span><span class="coords" id="timer">00:00</span></div>
+<footer>
+ <div class="controls-hint"><div><kbd>W</kbd><span class="wasd"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></div><p>MOVE YOUR BODY<span>Mouse to aim · Hold to fire</span></p></div>
+ <div class="abilities">
+  <button class="ability" data-action="shield" id="shield"><kbd>Q</kbd><span class="ability-icon">◎</span><span><b>Grow shield</b><small>18g · tethered orbit</small></span></button>
+  <button class="ability" data-action="drone" id="drone"><kbd>E</kbd><span class="ability-icon">✣</span><span><b>Release drone</b><small id="dronecost">24g · hunts nearby</small></span></button>
+  <button class="ability" data-action="tower" id="tower"><kbd>R</kbd><span class="ability-icon">♜</span><span><b>Root a tower</b><small>28g · holds position</small></span></button>
+  <button class="ability recall" data-action="recall" id="recall"><kbd>X</kbd><span class="ability-icon">↶</span><span><b>Reabsorb</b><small>Reclaim living units</small></span></button>
+ </div>
+ <button id="autofire" class="auto active" aria-pressed="true"><span class="pulse-dot"></span>AUTO FIRE<small>F to toggle</small></button>
+</footer>
+<div id="touch-controls"><div id="joystick"><i></i><span>MOVE</span></div></div>
+<div id="overlay" class="overlay">
+ <section id="start-panel" class="panel start-panel">
+  <div class="panel-label"><span class="pulse-dot"></span> A BIOLOGICAL DEFENSE EXPERIMENT</div>
+  <h2>Feed.<br>Mutate.<em>Divide.</em></h2>
+  <p class="intro">You are a growing, hungry organism.<br>Your body is your ammunition. Your offspring are your defense.</p>
+  <div class="start-rules"><div><span>01</span><p><b>Consume</b> fallen enemies to grow.</p></div><div><span>02</span><p><b>Split off</b> shields, drones & towers.</p></div><div><span>03</span><p><b>Defend the nest</b> through six waves.</p></div></div>
+  <button id="start" class="primary">EMERGE <span>↗</span></button>
+  <p class="start-note">WASD / arrows to move · Auto fire is on · ~5 minute run</p>
+ </section>
+ <section id="pause-panel" class="panel compact" hidden><span class="panel-label">METABOLISM SUSPENDED</span><h2>Take a breath.</h2><p>The garden can wait.</p><button id="resume" class="primary">RESUME <span>↗</span></button><button id="restart-pause" class="textbutton">Start a new organism</button></section>
+ <section id="mutation-panel" class="panel mutation-panel" hidden><span class="panel-label">ADAPTATION AVAILABLE</span><h2>Change your nature.</h2><p>Choose a mutation. Adaptations stack for this run.</p><div id="choices"></div></section>
+ <section id="end-panel" class="panel compact" hidden><span id="end-kicker" class="panel-label">SPECIMEN LOST</span><h2 id="end-title">Life finds<br>another way.</h2><p id="end-copy"></p><div id="end-stats"></div><button id="restart" class="primary">EVOLVE AGAIN <span>↗</span></button><p id="best" class="start-note"></p></section>
+</div>
+<script type="module" src="game.js"></script>
+</body></html>
