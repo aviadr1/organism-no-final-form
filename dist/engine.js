@@ -1,6 +1,12 @@
 // Pure simulation: no browser or rendering dependencies. World units are independent of pixels.
 export const ARENA = { width: 1500, height: 1000 };
 export const COSTS = { shield: 18, drone: 24, tower: 28 };
+export const WEAPONS = [
+ {id:'acid',name:'Bile gland',glyph:'◉',cost:.32,interval:.28,range:480,description:'Corrosive globules leave slowing acid pools.'},
+ {id:'bone',name:'Rib repeater',glyph:'⋔',cost:1.1,interval:.65,range:360,description:'Vomit five barbed bone shards in a wide spray.'},
+ {id:'parasite',name:'Brood cyst',glyph:'❦',cost:1.5,interval:.9,range:520,description:'Expel two living parasites that seek nearby flesh.'},
+ {id:'tongue',name:'Feeding tongue',glyph:'≋',cost:.65,interval:.65,range:205,description:'Lash through a cone of enemies and slow them.'}
+];
 export const MUTATIONS = [
  {id:'venom',name:'Venom sacs',glyph:'✺',description:'Your projectiles deal 35% more damage.',tag:'OFFENSE',apply:g=>g.stats.damage*=1.35},
  {id:'cilia',name:'Hungry cilia',glyph:'≋',description:'Move 15% faster. Draw in remains from farther away.',tag:'FORAGING',apply:g=>{g.stats.speed*=1.15;g.stats.vacuum+=35;}},
@@ -20,7 +26,7 @@ export class Game {
   this.phase='ready';this.previousPhase='playing';this.time=0;this.wave=0;this.kills=0;this.harvested=0;this.peak=65;this.level=1;this.xp=0;this.xpGoal=30;
   this.player={x:750,y:635,mass:65,angle:-Math.PI/2,hit:0,fire:0};this.nest={x:750,y:490,hp:100,hit:0};
   this.stats={speed:210,vacuum:65,damage:15,armor:1,shotCost:.32,interval:.24,allyDamage:1,allyHealth:1,regen:0,segments:0};
-  this.enemies=[];this.allies=[];this.bullets=[];this.food=[];this.events=[];this.trail=[];this.mutations=[];this.choices=[];this.spawnQueue=0;this.spawnClock=0;this.intermission=0;this.nextId=0;this.bossSpawned=false;
+  this.weapon='acid';this.pools=[];this.lashes=[];this.enemies=[];this.allies=[];this.bullets=[];this.food=[];this.events=[];this.trail=[];this.mutations=[];this.choices=[];this.spawnQueue=0;this.spawnClock=0;this.intermission=0;this.nextId=0;this.bossSpawned=false;
   for(let i=0;i<45;i++)this.trail.push({x:750+Math.sin(i*.2)*10,y:635+i*6});
   // A few edible remnants teach the feeding mechanic before combat reaches the nest.
   for(let i=0;i<9;i++){const a=i*2.4;this.food.push({x:750+Math.cos(a)*115,y:635+Math.sin(a)*100,mass:2,xp:1,hue:i%3,age:0});}
@@ -40,7 +46,7 @@ export class Game {
   }
   if(kind==='drone'){
    const attached=this.allies.find(a=>a.kind==='shield');
-   if(attached){attached.kind='drone';this.event('message',{text:'Tether severed. Your offspring hunts alone.'});return true;}
+   if(attached){attached.kind='drone';this.event('detach',{x:attached.x,y:attached.y});this.event('message',{text:'Tether severed. Your offspring hunts alone.'});return true;}
   }
   const cost=COSTS[kind];if(cost===undefined)return false;
   if(this.allies.length>=10){this.event('message',{text:'Colony limit reached. Reabsorb with X.'});return false;}
@@ -51,16 +57,39 @@ export class Game {
   this.event('bud',{x:this.player.x,y:this.player.y});
   this.event('message',{text:kind==='shield'?'Shield grown. Press E to detach it as a drone.':kind==='tower'?'Tower rooted. It will defend this ground.':'Drone released. It hunts nearby hostiles.'});return true;
  }
+ setWeapon(id){
+  if(!WEAPONS.some(w=>w.id===id))return false;
+  this.weapon=id;return true;
+ }
+ fireWeapon(target){
+  const w=WEAPONS.find(w=>w.id===this.weapon),p=this.player,cost=w.cost*this.stats.shotCost/.32;
+  if(this.phase!=='playing'||p.fire>0||!this.canSpend(cost))return false;
+  p.mass-=cost;p.fire=w.interval*this.stats.interval/.24;
+  const angle=Math.atan2(target.y-p.y,target.x-p.x);p.aim=angle;
+  if(w.id==='tongue'){
+   this.lashes.push({x:p.x,y:p.y,angle,length:w.range,life:.32,maxLife:.32});
+   for(const e of this.enemies){const d=dist(p,e),a=Math.atan2(e.y-p.y,e.x-p.x);if(e.hp>0&&d<w.range+e.r&&Math.cos(a-angle)>.58){e.hp-=this.stats.damage*2.5;e.slow=1.5;e.hit=.2;this.event('impact',{x:e.x,y:e.y,kind:'tongue'});}}
+  }else{
+   const count=w.id==='bone'?5:w.id==='parasite'?2:1;
+   for(let i=0;i<count;i++){
+    const offset=(i-(count-1)/2)*(w.id==='bone'?.14:.2),a=angle+offset;
+    const b=this.shoot(p,{x:p.x+Math.cos(a)*100,y:p.y+Math.sin(a)*100},this.stats.damage*(w.id==='bone'?.72:w.id==='parasite'?1.8:1),true,w.id==='bone'?650:w.id==='parasite'?240:420);
+    b.kind=w.id;b.life=w.id==='bone'?.64:w.id==='parasite'?3:1.3;
+   }
+  }
+  this.event('shot',{weapon:w.id,x:p.x,y:p.y});return true;
+ }
  shoot(origin,target,damage,friendly=true,speed=550){
   const angle=Math.atan2(target.y-origin.y,target.x-origin.x);
-  this.bullets.push({x:origin.x,y:origin.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1.8,damage,friendly});
+  const b={x:origin.x,y:origin.y,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed,life:1.8,damage,friendly,kind:friendly?'spore':'enemy'};
+  this.bullets.push(b);return b;
  }
  nearest(origin,range){let best=null,d=range;for(const e of this.enemies){if(e.hp<=0)continue;const nd=dist(origin,e);if(nd<d){best=e;d=nd;}}return best;}
  spawnEnemy(kind){
   const a=this.random()*Math.PI*2;
   const types={crawler:{hp:25,speed:39,r:13,damage:6,mass:9},runner:{hp:18,speed:70,r:10,damage:5,mass:7},spitter:{hp:39,speed:30,r:17,damage:6,mass:12},brute:{hp:100,speed:24,r:25,damage:12,mass:22},boss:{hp:650,speed:15,r:49,damage:22,mass:75}};
   const t=types[kind];const scale=1+(this.wave-1)*.13;
-  const e={id:this.nextId++,kind,x:clamp(this.nest.x+Math.cos(a)*760,25,1475),y:clamp(this.nest.y+Math.sin(a)*560,25,975),...t,hp:t.hp*scale,maxHp:t.hp*scale,attack:0,hit:0,angle:a+Math.PI,seed:this.random()*10};
+  const e={id:this.nextId++,kind,x:clamp(this.nest.x+Math.cos(a)*760,25,1475),y:clamp(this.nest.y+Math.sin(a)*560,25,975),...t,hp:t.hp*scale,maxHp:t.hp*scale,attack:0,hit:0,slow:0,angle:a+Math.PI,seed:this.random()*10};
   this.enemies.push(e);return e;
  }
  kill(e){
@@ -81,8 +110,8 @@ export class Game {
   const mx=input.x||0,my=input.y||0,len=Math.hypot(mx,my);
   if(len>0){p.x=clamp(p.x+mx/Math.max(1,len)*this.stats.speed*dt,30,1470);p.y=clamp(p.y+my/Math.max(1,len)*this.stats.speed*dt,35,965);p.angle=Math.atan2(my,mx);}
   const head=this.trail[0];if(dist(p,head)>4){this.trail.unshift({x:p.x,y:p.y});if(this.trail.length>240)this.trail.pop();}
-  const target=input.fire?input.aim:input.auto?this.nearest(p,480):null;
-  if(target&&p.fire<=0&&this.canSpend(this.stats.shotCost)){this.shoot(p,target,this.stats.damage);p.mass-=this.stats.shotCost;p.fire=this.stats.interval;this.event('shot');}
+  const target=input.fire?input.aim:input.auto?this.nearest(p,WEAPONS.find(w=>w.id===this.weapon).range):null;
+  if(target)this.fireWeapon(target);
   if(this.spawnQueue>0){this.spawnClock-=dt;if(this.spawnClock<=0){
    let kind='crawler';const n=this.random();if(this.wave>=2&&n<.3)kind='runner';if(this.wave>=3&&n>.68)kind='spitter';if(this.wave>=4&&n>.84)kind='brute';
    if(this.wave===6&&!this.bossSpawned){kind='boss';this.bossSpawned=true;}
@@ -99,15 +128,19 @@ export class Game {
    if(enemy&&a.kind!=='shield'&&a.fire<=0){this.shoot(a,enemy,(a.kind==='tower'?21:12)*this.stats.allyDamage);a.fire=a.kind==='tower'?.62:.8;}
    if(a.kind==='shield')for(const e of this.enemies){if(e.hp>0&&dist(a,e)<e.r+17){e.hp-=42*this.stats.allyDamage*dt;a.hp-=10*dt;e.hit=.12;const d=Math.max(1,dist(a,e));e.x+=(e.x-a.x)/d*75*dt;e.y+=(e.y-a.y)/d*75*dt;}}
   }
+  this.lashes=this.lashes.filter(l=>{l.life-=dt;return l.life>0;});
+  this.pools=this.pools.filter(pool=>{
+   pool.life-=dt;for(const e of this.enemies)if(e.hp>0&&dist(pool,e)<pool.r+e.r){e.hp-=pool.damage*dt;e.slow=.35;e.hit=Math.max(e.hit,.03);}return pool.life>0;
+  });
   for(const e of this.enemies){
-   if(e.hp<=0)continue;e.hit=Math.max(0,e.hit-dt);e.attack-=dt;
+   if(e.hp<=0)continue;e.slow=Math.max(0,e.slow-dt);e.hit=Math.max(0,e.hit-dt);e.attack-=dt;
    let target=this.nest;let nearest=dist(e,this.nest);
    if(dist(e,p)<165&&dist(e,p)<nearest){target=p;nearest=dist(e,p);}
    for(const a of this.allies){const d=dist(e,a);if(a.hp>0&&d<115&&d<nearest){target=a;nearest=d;}}
    e.angle=Math.atan2(target.y-e.y,target.x-e.x);
    const targetR=target===this.nest?43:target===p?this.radius():17;
    const ranged=e.kind==='spitter';
-   if(nearest>e.r+targetR+(ranged?180:0)){e.x+=Math.cos(e.angle)*e.speed*dt;e.y+=Math.sin(e.angle)*e.speed*dt;}
+   if(nearest>e.r+targetR+(ranged?180:0)){e.x+=Math.cos(e.angle)*e.speed*(e.slow>0?.55:1)*dt;e.y+=Math.sin(e.angle)*e.speed*(e.slow>0?.55:1)*dt;}
    else if(e.attack<=0){
     e.attack=ranged?2.2:1.1;
     if(ranged)this.shoot(e,target,e.damage,false,180);
@@ -116,10 +149,13 @@ export class Game {
    }
   }
   for(const b of this.bullets){
+   if(b.kind==='parasite'){
+    const prey=this.nearest(b,330);if(prey){const a=Math.atan2(prey.y-b.y,prey.x-b.x),turn=Math.min(1,dt*4);b.vx+=(Math.cos(a)*270-b.vx)*turn;b.vy+=(Math.sin(a)*270-b.vy)*turn;}
+   }
    b.life-=dt;const ox=b.x,oy=b.y;b.x+=b.vx*dt;b.y+=b.vy*dt;
    // Swept segment collision prevents fast projectiles tunnelling through small enemies.
    const hits=(entity,r)=>{const dx=b.x-ox,dy=b.y-oy,l=dx*dx+dy*dy;const t=l?clamp(((entity.x-ox)*dx+(entity.y-oy)*dy)/l,0,1):0;return Math.hypot(entity.x-ox-dx*t,entity.y-oy-dy*t)<r+3;};
-   if(b.friendly){for(const e of this.enemies){if(e.hp>0&&hits(e,e.r)){e.hp-=b.damage;e.hit=.13;b.life=0;this.event('impact',{x:b.x,y:b.y});break;}}}
+   if(b.friendly){for(const e of this.enemies){if(e.hp>0&&hits(e,e.r)){e.hp-=b.damage;e.hit=.13;b.life=0;this.event('impact',{x:b.x,y:b.y,kind:b.kind});if(b.kind==='acid'){this.pools.push({x:b.x,y:b.y,r:42,life:2.5,maxLife:2.5,damage:b.damage*.3});if(this.pools.length>50)this.pools.shift();}break;}}}
    else {
     const ally=this.allies.find(a=>a.hp>0&&hits(a,18));
     if(ally){ally.hp-=b.damage;ally.hit=.2;b.life=0;}
