@@ -1,0 +1,11 @@
+<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ORGANISM — Anatomy atlas</title><style>body{background:#13161e;color:#dccfc1;font:14px monospace;margin:24px}canvas{display:block;width:min(1024px,100%);height:auto;image-rendering:pixelated;margin:20px 0}button{background:#c58391;color:#191922;padding:12px;border:0;font:inherit;cursor:pointer}p{max-width:800px;line-height:1.6}</style><h1>ORGANISM / stolen anatomy</h1><p>Reference poses from the live procedural renderer. These same parts appear in prey, corpses and grafts. Labels show each part's default weapon.</p><button id="download">Download PNG</button><canvas id="atlas" aria-label="Fourteen labeled pixel anatomy sprites"></canvas><script type="module">
+import { Game } from '../dist/engine.js';
+import { PARTS, WEAPONS } from '../dist/content.js';
+import { PixelWorld } from '../dist/pixel-world.js';
+const canvas=document.getElementById('atlas'),world=new PixelWorld(canvas,new Game(()=>.5)),cell=128,cols=4,rows=Math.ceil(Object.keys(PARTS).length/cols);
+canvas.width=cols*cell;canvas.height=rows*cell;world.w=canvas.width;world.h=canvas.height;world.time=.8;world.ctx.imageSmoothingEnabled=false;
+world.rect(0,0,canvas.width,canvas.height,'#13161e');
+Object.entries(PARTS).forEach(([kind,part],i)=>{const x=i%cols*cell,y=Math.floor(i/cols)*cell;world.rect(x+3,y+3,cell-6,cell-6,'#1d1a25');world.part(kind,x+cell/2,y+52,1.5,i);world.text(part.name.toUpperCase(),x+cell/2,y+98,'#dccfc1',8);world.text(WEAPONS.find(w=>w.id===part.weapon).name,x+cell/2,y+113,'#b49198',7);});
+document.getElementById('download').onclick=()=>{const link=document.createElement('a');link.download='anatomy-atlas.png';link.href=canvas.toDataURL('image/png');link.click();};
+document.documentElement.dataset.ready='true';
+</script></html>
