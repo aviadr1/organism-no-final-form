@@ -1,63 +1,17 @@
-<!doctype html>
-<html lang="en">
-<head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0a1213"><meta name="description" content="Feed. Mutate. Divide. A living-body tower defense game where your biomass is your weapon.">
-<title>ORGANISM — The Hungry Garden</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230c1917'/%3E%3Cpath d='M9 39Q3 8 28 16T53 30Q64 54 36 53T9 39' fill='%23c7ee8d'/%3E%3Ccircle cx='35' cy='30' r='8' fill='%23285242'/%3E%3C/svg%3E">
-<link rel="stylesheet" href="style.css">
-</head>
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#13161e"><meta name="description" content="An endless pixel body-horror ecosystem. Graft your prey, fire from stolen flesh, and plant a spreading colony."><title>ORGANISM — No Final Form</title><link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath fill='%23a74861' d='M4 9h8V3h7v8h9v10h-8v8H9v-7H2z'/%3E%3Cpath fill='%23edc7a0' d='M10 12h3v4h-3zm9 3h4v3h-4z'/%3E%3C/svg%3E"><link rel="stylesheet" href="style.css"></head>
 <body>
-<canvas id="world" aria-label="The Hungry Garden game arena. Move with WASD or arrow keys. Aim with the mouse." tabindex="0"></canvas>
-<div class="grain" aria-hidden="true"></div>
-<header>
- <a class="brand" href="./" aria-label="Organism home"><span class="brand-symbol">✳</span><span>ORGANISM<small>THE HUNGRY GARDEN</small></span></a>
- <div class="topstats">
-  <div class="stat biomass"><span class="eyebrow"><i></i> BIOMASS</span><strong id="mass">65<span> g</span></strong><div class="meter"><b id="massbar"></b></div></div>
-  <div class="stat neststat"><span class="eyebrow">NEST INTEGRITY</span><strong id="nest">100<span> %</span></strong><div class="meter red"><b id="nestbar"></b></div></div>
-  <div class="stat wavestat"><span class="eyebrow">HOSTILE WAVE</span><strong id="wave">01<span> / 06</span></strong><span class="small" id="waveinfo">Awaiting emergence</span></div>
- </div>
- <div class="utilities"><button id="sound" class="iconbutton" aria-label="Sound settings" aria-expanded="false" aria-controls="audio-panel" title="Sound settings">♫</button><button id="pause" class="iconbutton" aria-label="Pause game" title="Pause (Esc)">Ⅱ</button></div>
-</header>
-<section id="audio-panel" class="audio-panel" aria-label="Audio settings" hidden>
- <div class="panel-label">THE BODY HAS A VOICE</div>
- <label for="music-volume">Horror score <span id="music-value">42%</span></label><input id="music-volume" type="range" min="0" max="100" value="42">
- <label for="effects-volume">Wet sound effects <span id="effects-value">65%</span></label><input id="effects-volume" type="range" min="0" max="100" value="65">
- <button id="mute-all" class="textbutton">Mute all audio</button>
-</section>
-<aside class="left-rail">
- <div class="chapter"><span class="eyebrow">CONTAINMENT BREACH</span><h1>Flesh has<br>no final form.</h1><p>It breathes. It hungers.<br>It wears what it eats.</p></div>
- <div class="objective"><span class="tinyindex">01 / OBJECTIVE</span><div class="objective-line"><span class="pulse-dot"></span><span>Protect the mother nest</span></div><p id="objective">Survive six waves. Leave nothing uneaten.</p></div>
- <div class="evolution"><div class="row"><span class="tinyindex">EVOLUTION</span><span id="level">LV. 01</span></div><div class="xp-meter"><b id="xpbar"></b></div><p id="xptext">Feed to unlock a mutation</p><div id="mutations" class="mutations"><span class="empty-mutation">No adaptations. Yet.</span></div></div>
-</aside>
-<div class="sector"><span class="cross">+</span> SECTOR 07 <span class="sector-line"></span> <span>FLESH QUARANTINE</span></div>
-<div id="toast" role="status" aria-live="polite"></div>
-<div id="wave-banner"><span id="banner-kicker">HOSTILES DETECTED</span><strong id="banner-text">Wave 01</strong></div>
-<section class="weapon-rack" aria-label="Living weapons"><div class="weapon-heading"><span class="tinyindex">LIVING WEAPONS</span><span>1–4 TO MORPH</span></div><div id="weapons"></div><p id="weapon-description"></p></section>
-<div class="arena-caption"><span class="pulse-dot"></span><span id="statusline">SPECIMEN VIABLE</span><span class="coords" id="timer">00:00</span></div>
-<footer>
- <div class="controls-hint"><div><kbd>W</kbd><span class="wasd"><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></span></div><p>MOVE YOUR BODY<span>Mouse to aim · Hold to fire</span></p></div>
- <div class="abilities">
-  <button class="ability" data-action="shield" id="shield"><kbd>Q</kbd><span class="ability-icon">◎</span><span><b>Grow shield</b><small>18g · tethered orbit</small></span></button>
-  <button class="ability" data-action="drone" id="drone"><kbd>E</kbd><span class="ability-icon">✣</span><span><b>Release drone</b><small id="dronecost">24g · hunts nearby</small></span></button>
-  <button class="ability" data-action="tower" id="tower"><kbd>R</kbd><span class="ability-icon">♜</span><span><b>Root a tower</b><small>28g · holds position</small></span></button>
-  <button class="ability recall" data-action="recall" id="recall"><kbd>X</kbd><span class="ability-icon">↶</span><span><b>Reabsorb</b><small>Reclaim living units</small></span></button>
- </div>
- <button id="autofire" class="auto active" aria-pressed="true"><span class="pulse-dot"></span>AUTO FIRE<small>F to toggle</small></button>
-</footer>
+<canvas id="world" aria-label="Endless pixel-art world. WASD or arrow keys to move. Mouse to aim." tabindex="0"></canvas><div class="vignette" aria-hidden="true"></div>
+<header><div class="brand"><span class="brand-mark">✣</span><div>ORGANISM<small>NO FINAL FORM / BUILD 03</small></div></div><div class="topstats"><div><span>BIOMASS</span><strong id="mass">100<small>g</small></strong></div><div><span>GRAFTED ORGANS</span><strong id="organs">05</strong></div><div><span>COLONIES</span><strong id="colony-count">01</strong></div><div><span>INFECTION</span><strong id="wave">01<small> / ∞</small></strong></div></div><div class="utilities"><button id="sound" class="iconbutton" aria-label="Sound settings" aria-expanded="false" aria-controls="audio-panel">♫</button><button id="pause" class="iconbutton" aria-label="Pause game">Ⅱ</button></div></header>
+<section id="audio-panel" class="audio-panel" aria-label="Audio settings" hidden><div class="eyebrow">THE BODY HAS A VOICE</div><label for="music-volume">Horror score <span id="music-value">42%</span></label><input id="music-volume" type="range" min="0" max="100" value="42"><label for="effects-volume">Wet sound effects <span id="effects-value">65%</span></label><input id="effects-volume" type="range" min="0" max="100" value="65"><button id="mute-all" class="textbutton">Mute all audio</button></section>
+<aside class="left-rail"><div class="chapter"><span class="eyebrow red">YOU ARE THE INFECTION</span><h1>We are<br>what we eat.</h1><p>No borders. No final shape.<br>Take their bodies with you.</p></div><section class="anatomy"><div class="rail-title">STOLEN ANATOMY <span id="species-count">0 SPECIES</span></div><div id="anatomy-list"><p>Eat a corpse. Keep its parts.</p></div><div class="xp-meter"><b id="xpbar"></b></div><div class="xp-label"><span id="level">MUTATION 00</span><span id="xptext">0 / 38</span></div><div id="mutations"></div></section><section class="tower-panel"><div class="rail-title">ROOTED DEFENSES <kbd>T</kbd></div><div id="tower-options"></div><p id="tower-description"></p></section><div class="field-note">COLONIES REPAIR YOUR BROOD.<br>DISTANT COLONIES LIE DORMANT.<br>YOU CAN SURVIVE WITHOUT THEM.</div></aside>
+<aside class="right-rail"><div class="radar-title"><span id="biome">QUARANTINE WOODS</span><i></i></div><canvas id="radar" width="140" height="92" aria-label="Nearby enemies and colonies"></canvas><div class="radar-legend"><span>● YOU</span><span>■ COLONY</span><span>· PREY</span></div><div id="coordinates">0000 / 0000</div><div class="runstats"><span>CONSUMED <b id="kills">0</b></span><span>SURVIVED <b id="timer">00:00</b></span></div></aside>
+<div id="toast" role="status" aria-live="polite"></div><div id="wave-banner"><span id="banner-kicker">INFECTION SPREADING</span><strong id="banner-text">STAGE 01</strong></div>
+<div id="statusline">FEED / GRAFT / SPREAD</div>
+<div class="firing-panel"><div class="firing-heading"><span>BIOMASS DISCHARGE</span><kbd>Z</kbd></div><div id="fire-levels"></div><div id="volley-info">3 mouths · 0.84g / volley</div></div>
+<footer><section class="weapon-rack" aria-label="Living weapons"><div class="rack-title"><span>GROW A WEAPON</span><span>1–7</span></div><div id="weapons"></div><p id="weapon-description"></p></section><section class="build-rack" aria-label="Colony commands"><button data-action="shield" id="shield"><kbd>Q</kbd><b>ORBITING SHIELD</b><small>18g · tethered flesh</small></button><button data-action="drone" id="drone"><kbd>E</kbd><b>HUNTER DRONE</b><small>28g · independent predator</small></button><button data-action="tower" id="tower"><kbd>R</kbd><b>ROOT TOWER</b><small id="tower-cost">26g · bile spire</small></button><button data-action="colony" id="colony"><kbd>C</kbd><b>PLANT COLONY</b><small id="colony-cost">65g · spread the infection</small></button><button data-action="recall" id="recall"><kbd>X</kbd><b>REABSORB BROOD</b><small>Recover living mobile tissue</small></button><button id="autofire" class="active" aria-pressed="true"><kbd>F</kbd><b>AUTO FIRE: ON</b><small>WASD move · Mouse aim</small></button></section></footer>
 <div id="touch-controls"><div id="joystick"><i></i><span>MOVE</span></div></div>
-<div id="overlay" class="overlay">
- <section id="start-panel" class="panel start-panel">
-  <div class="panel-label"><span class="pulse-dot"></span> A BODY HORROR SURVIVAL EXPERIMENT</div>
-  <h2>Feed.<br>Mutate.<em>Divide.</em></h2>
-  <p class="intro">A mouth without a face. A body without an end.<br>Grow weapons from your flesh. Feed your hungry offspring.</p>
-  <div class="start-rules"><div><span>01</span><p><b>Consume</b> the twitching remains to grow.</p></div><div><span>02</span><p><b>Morph</b> four weapons. Bud shields, drones & towers.</p></div><div><span>03</span><p><b>Defend the nest</b> through six waves.</p></div></div>
-  <button id="start" class="primary">EMERGE <span>↗</span></button>
-  <p class="start-note">Sound starts on Emerge · WASD to move · 1–4 to morph</p>
- </section>
- <section id="pause-panel" class="panel compact" hidden><span class="panel-label">METABOLISM SUSPENDED</span><h2>Take a breath.</h2><p>The garden can wait.</p><button id="resume" class="primary">RESUME <span>↗</span></button><button id="restart-pause" class="textbutton">Start a new organism</button></section>
- <section id="mutation-panel" class="panel mutation-panel" hidden><span class="panel-label">ADAPTATION AVAILABLE</span><h2>Change your nature.</h2><p>Choose a mutation. Adaptations stack for this run.</p><div id="choices"></div></section>
- <section id="end-panel" class="panel compact" hidden><span id="end-kicker" class="panel-label">SPECIMEN LOST</span><h2 id="end-title">Life finds<br>another way.</h2><p id="end-copy"></p><div id="end-stats"></div><button id="restart" class="primary">EVOLVE AGAIN <span>↗</span></button><p id="best" class="start-note"></p></section>
-</div>
-<script type="module" src="game.js"></script>
-</body></html>
+<div id="overlay" class="overlay"><section id="start-panel" class="panel start-panel"><span class="eyebrow red">AN ENDLESS BODY-HORROR ECOSYSTEM</span><h2>Nothing<br>you eat<br><em>stays dead.</em></h2><p>You are a colony of stolen flesh.<br>Every corpse becomes another part of you.</p><ol><li><b>GRAFT YOUR PREY.</b> Humans, animals, abominations.</li><li><b>OPEN EVERY MOUTH.</b> Seven weapons. Three discharge levels.</li><li><b>SPREAD FOREVER.</b> Plant colonies, towers, and hunting offspring.</li></ol><button id="start" class="primary">BECOME <span>↗</span></button><small class="start-note">WASD / ARROWS move · 1–7 weapons · Z discharge<br>Sound starts here. Your run ends when your body dies.</small></section>
+<section id="pause-panel" class="panel compact" hidden><span class="eyebrow">METABOLISM SUSPENDED</span><h2>Still<br>breathing.</h2><p>Your colonies can wait.</p><button id="resume" class="primary">RESUME <span>↗</span></button><button id="restart-pause" class="textbutton">Start a new organism</button></section>
+<section id="mutation-panel" class="panel mutation-panel" hidden><span class="eyebrow red">THE FLESH REMEMBERS</span><h2>A new aberration.</h2><p>Choose one. Mutations stack for this life.</p><div id="choices"></div></section>
+<section id="end-panel" class="panel compact" hidden><span class="eyebrow red">THE BODY IS SILENT</span><h2>Become<br>something else.</h2><p id="end-copy"></p><div id="end-stats"></div><button id="restart" class="primary">RECONSTITUTE <span>↗</span></button><p id="best" class="start-note"></p></section></div>
+<script type="module" src="game.js"></script></body></html>

@@ -43,7 +43,7 @@ export class Soundscape {
   if(this.phase!==game.phase){this.phase=game.phase;this.applyLevels();}
   const t=this.context.currentTime;
   if(this.muted||this.musicVolume===0||document.hidden){this.nextBeat=t+.1;this.nextChord=t+.1;return;}
-  const threat=Math.min(1,(game.wave-1)/8+(1-game.nest.hp/100)*.6),seconds=.61-threat*.14;
+  const threat=Math.min(1,(game.wave-1)/8+(1-game.nest.hp/(game.nest.maxHp||180))*.6),seconds=.61-threat*.14;
   // Schedule against the audio clock, only a short lookahead; never pile up after tab suspension.
   if(this.nextBeat<t-.3)this.nextBeat=t+.02;
   if(this.nextBeat<t+.1){
@@ -60,10 +60,10 @@ export class Soundscape {
    this.nextChord=t+5.4;
   }
  }
- effect(name,{weapon='acid',x=750}={}){
+ effect(name,{weapon='acid',x=0}={}){
   if(!this.context||this.muted||this.effectsVolume===0)return;
   const t=this.context.currentTime,limit=name==='eat'?.075:name==='impact'?.045:name==='death'?.06:0;
-  if(t-(this.lastFx.get(name)??-10)<limit)return;this.lastFx.set(name,t);this.events++;const pan=Math.max(-.65,Math.min(.65,(x-750)/900)),v=(f,d,vol,options={})=>this.voice(f,d,vol,{pan,...options}),n=(d,vol,options={})=>this.breath(d,vol,{pan,...options});
+  if(t-(this.lastFx.get(name)??-10)<limit)return;this.lastFx.set(name,t);this.events++;const pan=Math.max(-.65,Math.min(.65,(x-(this.listenerX||0))/400)),v=(f,d,vol,options={})=>this.voice(f,d,vol,{pan,...options}),n=(d,vol,options={})=>this.breath(d,vol,{pan,...options});
   if(name==='shot'){
    if(weapon==='bone'){n(.18,.45,{frequency:2200,end:220,q:.6});v(110,.13,.2,{slide:.25,type:'sawtooth',cutoff:800});}
    else if(weapon==='parasite'){n(.3,.3,{frequency:900,end:180});v(260,.2,.16,{slide:.2});v(130,.25,.08,{at:t+.07,slide:1.9});}

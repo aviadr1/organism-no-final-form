@@ -1,33 +1,53 @@
-# ORGANISM — The Hungry Garden
+# ORGANISM — No Final Form
 
-A browser-local single-player prototype combining snake movement, biomass management, mutations, and tower defense. No backend or account data is used by the game. Sites hosts the game publicly; no sign-in is required.
+An endless, browser-local pixel body-horror prototype. You assimilate recognizable body parts, grow a branching organism, discharge biomass through multiple organs, and plant a network of colonies. The public Site requires no sign-in. A run lives in browser memory; only the best kill count persists locally.
 
 ## Play
 
-Run `npm start`, open http://localhost:4173, and choose **Emerge**. Desktop keyboard and mouse are recommended; a touch joystick and action buttons are available on phones.
+Run `npm start`, open http://localhost:4173, and choose **Become**. Desktop keyboard and mouse are recommended. Phones have a movement joystick and clickable commands.
 
-- WASD / arrow keys: move. Mouse: aim. Hold mouse / Space: fire manually.
-- F: toggle automatic targeting and firing (enabled initially).
-- 1–4: morph between the bile gland (acid pools), rib repeater (bone spread), brood cyst (homing parasites), and feeding tongue (wide melee lash). All four are available immediately.
-- The sound button opens independent music/effects sliders and a master mute. Sound starts with the Emerge gesture.
-- Q: spend 18g to grow an attached orbiting shield.
-- E: detach an attached shield for free; otherwise spend 24g to bud a hunting drone.
-- R: spend 28g to root a tower at the current location.
-- X: absorb all surviving offspring, recovering biomass proportional to remaining health.
-- Escape: pause. The game also pauses when the browser loses focus.
+| Input | Action |
+| --- | --- |
+| WASD / arrows | Move through the unbounded world. |
+| Mouse / hold click or Space | Aim and fire manually. |
+| F | Toggle automatic targeting (on initially). |
+| 1–7 | Bile glands, ribshot, larval brood, tongue lash, blood lance, rupture cyst, choir of teeth. |
+| Z / discharge buttons | Cycle Sip (one mouth), Feast (up to three), Rupture (up to eight). |
+| Q | Bud an orbiting shield for 18g. |
+| E | Spawn an independent hunter drone for 28g. |
+| T / tower selector | Choose bile spire, rib harpoon, brood hive, or rooted maw. |
+| R | Root the selected tower where you stand. |
+| C | Plant a colony for 65g, at least 220m from other colonies. |
+| X | Reabsorb living mobile offspring within 700m. Towers remain rooted. |
+| Escape | Pause; losing focus also pauses. |
+| Sound button | Separate score/effects sliders and master mute. |
 
-Defend the mother nest through six waves, including the broodmother. Eating remains adds biomass and mutation nutrients. Shooting spends biomass. Splitting and shooting preserve a 12g reserve; enemy damage can still kill the body. Offspring are capped at ten. Every cleared wave repairs eight nest integrity and allows seven seconds to feed. There are nine stackable mutation types. Run adaptations reset on death; only the best kill count persists in local storage.
+Every weapon has a per-orifice cost. The discharge readout displays the maximum volley cost, including mutations. Auto-fire charges only mouths with a target, although the complete volley reserve must be affordable before firing. Firing and building preserve 12g; hostile damage can still kill the body below 6g. Switching weapons cannot bypass cooldown.
 
-## Structure
+## Body and prey
 
-`dist/engine.js` owns world state, spawning, damage, biomass accounting, projectiles, mutations, and wave progression. It has no DOM dependencies and accepts an injectable random function. `dist/game.js` owns input, fixed-step ticking, canvas composition, and UI. `dist/flesh.js` renders shared living tissue, mouths, eyes, tapering tentacles, weapon organs, viscous trails, and remains. `dist/audio.js` owns the original procedural horror score and layered wet sound effects; it schedules against the Web Audio clock, limits simultaneous voices, and routes reverb through the music volume control. `dist/style.css` and `dist/index.html` provide the interface. The soundtrack combines a minor-key ostinato, detuned choir, heartbeat, and breathing textures; threat increases its tempo.
+The body is a graph of connected tissue nodes, with multiple branches from the core and secondary branching. It does not follow a snake trail. Human heads, arms and torsos; hound jaws and legs; stag skulls and antlers; and monstrous ribs, eyes, sacs, tendrils and mouths retain their visual identity after assimilation. Enemy, corpse and graft rendering reuse the same anatomy sprites.
 
-The game uses oblique 2D canvas drawing for its 2.5D presentation, with no third-party runtime JavaScript. Fonts have system fallbacks.
+Each kill drops biomass and one identifiable organ. Eating adds mass and nutrients; eating the organ grafts it onto the body. Sixteen stackable mutations alter offense, range, metabolism, anatomy, colony costs, regeneration, or hunting. Mobile offspring use separately allocated mass. Reabsorption refunds only the surviving fraction of their health.
 
-`npm test` exercises the real simulation with Node's built-in test runner. Browser checks should cover movement, every offspring transition, pause, mutations, end states, and touch input. Read-only `window.organism.snapshot()` exposes current state for browser checks and tuning.
+For stable frame times, the active anatomy has at most 49 nodes. Additional organs fuse into existing tissue; source-species counts and biomass continue to accumulate. Body size also has a visual scale limit. This is a rendering/gameplay budget, not an endlessly expanding mesh.
 
-## Prototype limits
+## World and colonies
 
-The body is visually flexible; only its head takes collision damage. It is not a full soft-body simulation. No multiplayer, cross-device saves, permanent unlock tree, or gamepad support is included. Mobile uses a full-arena view and needs a follow camera before becoming a primary target. Biomass and difficulty tuning are provisional.
+World coordinates have no arena boundary. Deterministic terrain tiles form quarantine woods, abandoned works and meat marshes. New chunks add local prey and remains. Infection stages increase every 45 seconds without a victory cap; every fourth stage brings a Congregation boss.
 
-Moving to a standalone engine requires porting the simulation; keeping rendering separate preserves the rules and test cases, not automatic engine compatibility.
+Colonies and towers retain their positions when you travel away. Colonies within 1,000m are active; more distant ones are dormant and safe until you return. Active colonies periodically give nearby players a little biomass and heal nearby offspring. Losing colonies does not end the run. Drones choose targets around their own position and pursue them independently; they return toward the player when prey runs out. Distant enemies and remains are discarded to bound active simulation cost, and enemy population is capped.
+
+Terrain structures are visual scenery in this prototype, not impassable obstacles. The radar shows nearby enemies, offspring and colonies; edge beacons point toward up to five most recently planted colonies.
+
+## Implementation
+
+- `dist/content.js`: canonical species, part, weapon, discharge, tower, mutation and biome definitions.
+- `dist/engine.js`: browser-independent simulation and biomass ownership. Injectable randomness supports reproducible checks.
+- `dist/pixel-world.js`: low-resolution canvas renderer, integer raster lines, reusable anatomy sprites, procedural terrain, camera and effects. CSS scales it with nearest-neighbor pixels.
+- `dist/game.js`: fixed-step ticking, controls, selection panels, HUD, radar and read-only diagnostics.
+- `dist/audio.js`: original procedural score and wet effects, audio-clock scheduling, voice limits, complete music/effects gain routing.
+
+`npm test` runs the real simulation through Node's built-in test runner. Coverage includes lineage-preserving grafts, branching topology, unlimited coordinates, multiple colonies, all tower types, independent drone pursuit, biomass accounting, discharge levels, all seven weapons, pause, death, reset, and endless stage progression. Browser checks cover controls, colony planting, audio, responsive layout and a crowded mature organism. `window.organism.snapshot()` exposes read-only state for browser QA.
+
+This remains a single-player prototype. There is no cross-device save, permanent unlock tree, multiplayer, or gamepad support. Moving to a standalone engine requires a port; the separate simulation and its invariants are the reusable design basis.
