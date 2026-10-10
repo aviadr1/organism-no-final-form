@@ -1,8 +1,8 @@
 // Shared gameplay definitions used by simulation, renderer, controls and tests.
 export const FIRE_LEVELS = [
- {id:0,name:'SIP',label:'Conserve',mouths:1,cost:.65,damage:.8,cadence:1.25},
- {id:1,name:'FEAST',label:'Balanced',mouths:3,cost:1,damage:1,cadence:1},
- {id:2,name:'RUPTURE',label:'All flesh',mouths:8,cost:1.35,damage:1.3,cadence:.78}
+ {id:0,name:'SIP',label:'Conserve',cost:.65,damage:.8,cadence:1.25},
+ {id:1,name:'FEAST',label:'Balanced',cost:1,damage:1,cadence:1},
+ {id:2,name:'RUPTURE',label:'All flesh',cost:1.35,damage:1.3,cadence:.78}
 ];
 export const WEAPONS = [
  {id:'acid',name:'Bile glands',glyph:'●',cost:.28,interval:.5,range:255,damage:15,description:'Corrosive mucus. Leaves slowing pools.'},
@@ -30,12 +30,12 @@ export const SPECIES = {
  boss:{name:'The Congregation',group:'Monstrosity',hp:800,speed:11,r:32,mass:140,damage:23,parts:['maw','eye_cluster','ribcage'],color:'#ac5570'}
 };
 export const PARTS = {
- core:{name:'Original tissue',role:'Flesh',size:14},flesh:{name:'Flesh knot',role:'Mouth',size:10},
- human_head:{name:'Human face',role:'Mouth',size:10},human_arm:{name:'Human arm',role:'Grasping limb',size:8},human_torso:{name:'Human torso',role:'Ribbed gland',size:14},
- dog_jaw:{name:'Hound jaw',role:'Mouth',size:10},dog_leg:{name:'Hound leg',role:'Grasping limb',size:8},
- antler:{name:'Stag antlers',role:'Bone gland',size:12},deer_skull:{name:'Stag skull',role:'Mouth',size:11},
- tendril:{name:'Severed tendril',role:'Grasping limb',size:9},bile_sac:{name:'Bile sac',role:'Acid gland',size:13},
- eye_cluster:{name:'Stolen eyes',role:'Sensory gland',size:11},ribcage:{name:'Exposed ribs',role:'Bone gland',size:15},maw:{name:'Secondary maw',role:'Mouth',size:16}
+ core:{weapon:'acid',name:'Original tissue',role:'Flesh',size:14},flesh:{weapon:'parasite',name:'Flesh knot',role:'Mouth',size:10},
+ human_head:{weapon:'scream',name:'Human face',role:'Mouth',size:10},human_arm:{weapon:'blood',name:'Human arm',role:'Grasping limb',size:8},human_torso:{weapon:'spore',name:'Human torso',role:'Ribbed gland',size:14},
+ dog_jaw:{weapon:'tongue',name:'Hound jaw',role:'Mouth',size:10},dog_leg:{weapon:'parasite',name:'Hound leg',role:'Grasping limb',size:8},
+ antler:{weapon:'bone',name:'Stag antlers',role:'Bone gland',size:12},deer_skull:{weapon:'bone',name:'Stag skull',role:'Mouth',size:11},
+ tendril:{weapon:'tongue',name:'Severed tendril',role:'Grasping limb',size:9},bile_sac:{weapon:'acid',name:'Bile sac',role:'Acid gland',size:13},
+ eye_cluster:{weapon:'blood',name:'Stolen eyes',role:'Sensory gland',size:11},ribcage:{weapon:'bone',name:'Exposed ribs',role:'Bone gland',size:15},maw:{weapon:'scream',name:'Secondary maw',role:'Mouth',size:16}
 };
 export const COSTS = {shield:18,drone:28,colony:65};
 export const MUTATIONS = [

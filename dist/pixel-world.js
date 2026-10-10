@@ -48,10 +48,15 @@ export class PixelWorld {
   for(const n of g.body){const p=this.worldToPixel(n.x,n.y);this.ellipse(p.x,p.y+6,n.size*u,n.size*u*.65,'#09101990');}
   for(const n of g.body){if(n.parent===null)continue;const parent=byId.get(n.parent),a=this.worldToPixel(parent.x,parent.y,3),b=this.worldToPixel(n.x,n.y,3);this.tentacle(a,b,Math.max(5,n.size*u*.9),n.id,'#813148');}
   for(const n of [...g.body].sort((a,b)=>a.y-b.y)){const p=this.worldToPixel(n.x,n.y,4),r=n.size*u;for(let i=0;i<2;i++){const a=n.angle+i*2.5,end={x:p.x+Math.cos(a)*(r+14),y:p.y+Math.sin(a)*(r+14)};this.tentacle(p,end,Math.max(2,4*u),n.id+i);}
-   this.part(n.kind,p.x,p.y,u,n.id);
+   this.part(n.kind,p.x,p.y,u*(1+(n.level-1)*.05),n.id);
+   const colors={acid:'#c7c38a',bone:'#e9d4b1',parasite:'#b999c3',tongue:'#db7f8e',blood:'#ef535e',spore:'#91b77b',scream:'#d2bbc6'};
+   this.rect(p.x-2,p.y-r-4,4,2,colors[n.weapon]);
+   for(let i=0;i<n.level;i++)this.rect(p.x-n.level*2+i*4,p.y+r+3,2,1,'#d9bd8f');
+   if(n.id===g.selectedPartId){const r2=r+4;for(const side of [-1,1]){this.line(p.x+side*r2,p.y-4,p.x+side*r2,p.y+4,'#eee2b1',1);this.line(p.x-4,p.y+side*r2,p.x+4,p.y+side*r2,'#eee2b1',1);}}
+
    // Every acquired piece can sprout a weapon orifice, not just the original head.
-   const angle=g.player.aim,m={x:p.x+Math.cos(angle)*r*.5,y:p.y+Math.sin(angle)*r*.45};
-   if(n.flash>0){this.flesh(m.x,m.y,5*u,n.id,['#ac7380','#e2a1a1','#f3dab3']);this.mouth(m.x,m.y,4*u,n.id);if(g.weapon==='bone')for(let i=-1;i<=1;i++)this.line(m.x,m.y,m.x+Math.cos(angle+i*.3)*12*u,m.y+Math.sin(angle+i*.3)*12*u,PAL.bone,1);}
+   const angle=n.aim,m={x:p.x+Math.cos(angle)*r*.5,y:p.y+Math.sin(angle)*r*.45};
+   if(n.flash>0){this.flesh(m.x,m.y,5*u,n.id,['#ac7380','#e2a1a1','#f3dab3']);this.mouth(m.x,m.y,4*u,n.id);if(n.weapon==='bone')for(let i=-1;i<=1;i++)this.line(m.x,m.y,m.x+Math.cos(angle+i*.3)*12*u,m.y+Math.sin(angle+i*.3)*12*u,PAL.bone,1);}
    else if(n.id%3===0)this.mouth(m.x,m.y,3*u,n.id);
   }
   if(g.player.hit>0){const p=this.worldToPixel(g.player.x,g.player.y);this.rect(p.x-2,p.y-2,4,4,'#ffd4bb');}

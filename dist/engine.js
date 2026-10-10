@@ -6,11 +6,11 @@ export class Game {
  constructor(random=Math.random){this.random=random;this.reset();}
  reset(){
   this.phase='ready';this.time=0;this.wave=1;this.kills=0;this.harvested=0;this.peak=100;this.level=1;this.xp=0;this.xpGoal=38;this.nextId=0;
-  this.player={x:0,y:0,mass:100,angle:0,aim:0,hit:0,fire:0};
+  this.player={x:0,y:0,mass:100,angle:0,aim:0,hit:0};
   this.stats={speed:95,vacuum:45,damage:1,armor:1,shotCost:1,interval:1,allyDamage:1,regen:0,huntRange:550,droneSpeed:115,digestion:1,reach:1,poolLife:1,poolDamage:1,buildCost:1,thorns:0,allyRegen:0,range:1};
-  this.weapon='acid';this.fireLevel=1;this.towerType='spitter';this.body=[];this.absorbed={};this.colonies=[];this.allies=[];this.enemies=[];this.food=[];this.bullets=[];this.pools=[];this.lashes=[];this.events=[];this.mutations=[];this.choices=[];this.explored=new Set();this.spawnClock=2;this.worldClock=0;this.mouthCursor=0;
-  this.body.push({id:this.nextId++,parent:null,kind:'core',species:'origin',angle:0,reach:0,x:0,y:0,size:14,flash:0});
-  for(let i=0;i<4;i++)this.graft('flesh','origin');
+  this.selectedPartId=0;this.fireLevel=1;this.towerType='spitter';this.body=[];this.absorbed={};this.colonies=[];this.allies=[];this.enemies=[];this.food=[];this.bullets=[];this.pools=[];this.lashes=[];this.events=[];this.mutations=[];this.choices=[];this.explored=new Set();this.spawnClock=2;this.worldClock=0;this.mouthCursor=0;
+  this.body.push({id:this.nextId++,parent:null,kind:'core',species:'origin',angle:0,reach:0,x:0,y:0,size:14,flash:0,weapon:'acid',level:1,cooldown:0,aim:0,depth:0,fork:0});
+  for(const kind of ['ribcage','dog_jaw','bile_sac','eye_cluster'])this.graft(kind,'origin');
   this.addColony(0,100);this.events=[];
   // Identifiable discarded body parts make the assimilation mechanic discoverable immediately.
   const starter=[['human_head','human'],['dog_jaw','dog'],['antler','deer']];
@@ -30,37 +30,60 @@ export class Game {
   this.absorbed[species]=(this.absorbed[species]||0)+1;
   // Bound drawing/targeting cost: excess organs fuse into an existing branch, retaining provenance counts.
   if(this.body.length>=49){const same=this.body.find(n=>n.kind===kind)||this.body[1];same.size=Math.min(25,same.size+.3);return same;}
-  const n=this.body.length,ring=Math.floor((n-1)/6),angle=(n-1)*2.399963;
-  const parent=ring===0?this.body[0]:this.body[1+((n-7)%Math.min(n-1,12))];
-  const reach=19+hash(n,3)*13;
-  const part={id:this.nextId++,parent:parent.id,kind,species,angle,reach,x:parent.x+Math.cos(angle)*reach,y:parent.y+Math.sin(angle)*reach,size:PARTS[kind].size,flash:0};
+  // Mostly single-child chains. Sparse binary forks replace radial growth.
+  const n=this.body.length,children=new Map();for(const node of this.body)if(node.parent!==null)children.set(node.parent,(children.get(node.parent)||0)+1);
+  const split=n>=7&&n%6===1;
+  const parent=split?this.body.slice(0,-3).reverse().find(node=>node.depth>=2&&children.get(node.id)===1):this.body[n-1];
+  const owner=parent||this.body[n-1],fork=split?(Math.floor(n/6)%2?1:-1):0;
+  const angle=owner.angle+(fork?fork*.95:Math.sin(n*.9)*.15),reach=24+hash(n,3)*5;
+  const part={id:this.nextId++,parent:owner.id,kind,species,angle:owner.parent===null?Math.PI:angle,reach,x:0,y:0,size:PARTS[kind].size,flash:0,weapon:PARTS[kind].weapon,level:1,cooldown:0,aim:0,depth:owner.depth+1,fork};
+  part.x=owner.x+Math.cos(part.angle)*reach;part.y=owner.y+Math.sin(part.angle)*reach;
   this.body.push(part);this.event('graft',{kind,species,x:part.x,y:part.y});return part;
  }
  updateBody(dt){
   const scale=this.bodyScale(),byId=new Map(this.body.map(n=>[n.id,n]));
-  for(const n of this.body){n.flash=Math.max(0,n.flash-dt);if(n.parent===null){n.x=this.player.x;n.y=this.player.y;continue;}
-   const parent=byId.get(n.parent),a=n.angle+Math.sin(this.time*.7+n.id)*.18,r=n.reach*scale*this.stats.reach;
-   const factor=Math.min(1,dt*12);n.x+=(parent.x+Math.cos(a)*r-n.x)*factor;n.y+=(parent.y+Math.sin(a)*r-n.y)*factor;
+  for(const n of this.body){n.flash=Math.max(0,n.flash-dt);n.cooldown=Math.max(0,n.cooldown-dt);if(n.parent===null){n.x=this.player.x;n.y=this.player.y;continue;}
+   const parent=byId.get(n.parent),r=n.reach*scale*this.stats.reach;
+   const dx=n.x-parent.x,dy=n.y-parent.y,d=Math.hypot(dx,dy);
+   let angle=d>.01?Math.atan2(dy,dx):n.angle;
+   // A split's first joint maintains a little lateral tension; the rest trail freely.
+   if(n.fork){const desired=parent.angle+n.fork*.8,delta=Math.atan2(Math.sin(desired-angle),Math.cos(desired-angle));angle+=delta*Math.min(1,dt*3);}
+   const length=Math.max(r*.8,Math.min(r,d));n.x=parent.x+Math.cos(angle)*length;n.y=parent.y+Math.sin(angle)*length;n.angle=angle;
   }
  }
- setWeapon(id){if(!WEAPONS.some(w=>w.id===id))return false;this.weapon=id;return true;}
+ get selectedPart(){return this.body.find(n=>n.id===this.selectedPartId)||this.body[0];}
+ get weapon(){return this.selectedPart.weapon;}
+ selectPart(id){if(!this.body.some(n=>n.id===id))return false;this.selectedPartId=id;return true;}
+ setWeapon(id){if(!WEAPONS.some(w=>w.id===id)||this.phase==='lost')return false;this.selectedPart.weapon=id;return true;}
+ upgradeCost(n=this.selectedPart){return 12*n.level;}
+ organStats(n){const w=WEAPONS.find(w=>w.id===n.weapon),level=n.level-1;return {...w,damage:w.damage*(1+level*.35),range:w.range*(1+level*.08),interval:w.interval/(1+level*.12),cost:w.cost*(1+level*.08)};}
+ upgradePart(id=this.selectedPartId){const n=this.body.find(n=>n.id===id);if(!n||!['playing','anatomy','paused'].includes(this.phase)||n.level>=5)return false;const cost=this.upgradeCost(n);if(!this.canSpend(cost))return this.message('Not enough biomass to upgrade safely.');this.player.mass-=cost;n.level++;n.size+=1;this.event('bud',{x:n.x,y:n.y});return true;}
  setFireLevel(level){if(!Number.isInteger(level)||level<0||level>2)return false;this.fireLevel=level;return true;}
  setTower(id){if(!TOWERS.some(t=>t.id===id))return false;this.towerType=id;return true;}
- firePlan(){const weapon=WEAPONS.find(w=>w.id===this.weapon),mode=FIRE_LEVELS[this.fireLevel],count=Math.min(this.body.length,mode.mouths);return {weapon,mode,count,cost:weapon.cost*mode.cost*this.stats.shotCost*count};}
+ firePlan(){const mode=FIRE_LEVELS[this.fireLevel];return {mode,count:this.body.length,cost:this.body.reduce((sum,n)=>sum+this.organStats(n).cost*mode.cost*this.stats.shotCost,0)};}
  nearest(origin,range){let best=null,d=range;for(const e of this.enemies){if(e.hp<=0)continue;const nd=distance(origin,e);if(nd<d){best=e;d=nd;}}return best;}
  fireWeapon(target=null,auto=false){
-  const p=this.player,{weapon:w,mode,count,cost}=this.firePlan();
-  if(this.phase!=='playing'||p.fire>0||!this.canSpend(cost))return false;
-  const mouths=[];for(let i=0;i<count;i++){const n=this.body[(this.mouthCursor+i*Math.max(1,Math.floor(this.body.length/count)))%this.body.length],prey=auto?this.nearest(n,w.range*this.stats.range):target;if(prey)mouths.push({n,prey});}
-  if(!mouths.length)return false;
-  const actualCost=cost*mouths.length/count;p.mass-=actualCost;p.fire=w.interval*mode.cadence*this.stats.interval;this.mouthCursor=(this.mouthCursor+1)%this.body.length;
-  for(const {n,prey} of mouths){n.flash=.25;this.emitWeapon(n,prey,w.id,w.damage*mode.damage*this.stats.damage,w.range*this.stats.range);}
-  p.aim=Math.atan2(mouths[0].prey.y-p.y,mouths[0].prey.x-p.x);this.event('shot',{weapon:w.id,x:p.x,y:p.y,mouths:mouths.length,cost:actualCost});return true;
+  if(this.phase!=='playing')return false;
+  const p=this.player,mode=FIRE_LEVELS[this.fireLevel],shots=[];
+  // Every ready organ participates, regardless of the selected organ or discharge level.
+  // Rotate priority between volleys so low biomass does not always favor the head.
+  for(let i=0;i<this.body.length;i++){
+   const n=this.body[(i+this.mouthCursor)%this.body.length];if(n.cooldown>0)continue;
+   const w=this.organStats(n),range=w.range*this.stats.range,prey=auto?this.nearest(n,range):target,cost=w.cost*mode.cost*this.stats.shotCost;
+   if(!prey||!this.canSpend(cost))continue;
+   p.mass-=cost;n.cooldown=w.interval*mode.cadence*this.stats.interval;n.flash=.25;n.aim=Math.atan2(prey.y-n.y,prey.x-n.x);
+   this.emitWeapon(n,prey,w.id,w.damage*mode.damage*this.stats.damage,range);shots.push({n,w,cost});
+  }
+  if(!shots.length)return false;
+  this.mouthCursor=(this.mouthCursor+1)%this.body.length;p.aim=shots[0].n.aim;
+  // One sound per weapon family per tick, not a wall of identical voices on large bodies.
+  for(const kind of new Set(shots.map(s=>s.w.id))){const group=shots.filter(s=>s.w.id===kind);this.event('shot',{weapon:kind,x:group[0].n.x,y:group[0].n.y,mouths:group.length,cost:group.reduce((sum,s)=>sum+s.cost,0)});}
+  return true;
  }
  emitWeapon(origin,target,kind,damage,range=260){
   const angle=Math.atan2(target.y-origin.y,target.x-origin.x);
   if(kind==='tongue'||kind==='blood'||kind==='scream'){
-   this.lashes.push({x:origin.x,y:origin.y,angle,kind,length:range,life:.26,maxLife:.26});
+   this.lashes.push({x:origin.x,y:origin.y,angle,kind,source:origin.id,length:range,life:.26,maxLife:.26});
    for(const e of this.enemies){if(e.hp<=0)continue;const d=distance(origin,e),a=Math.atan2(e.y-origin.y,e.x-origin.x),forward=Math.cos(a-angle),side=Math.abs(Math.sin(a-angle)*d);
     const hit=kind==='scream'?d<range+e.r:kind==='blood'?d<range&&forward>0&&side<e.r+5:d<range+e.r&&forward>.6;
     if(hit){e.hp-=damage;e.hit=.15;e.slow=kind==='blood'?e.slow:.7;if(kind==='scream'&&d>0){e.x+=(e.x-origin.x)/d*14;e.y+=(e.y-origin.y)/d*14;}this.event('impact',{x:e.x,y:e.y,kind});}
@@ -114,7 +137,7 @@ export class Game {
  tick(dt,input={}){
   if(this.phase!=='playing')return;dt=clamp(dt,0,.05);this.time+=dt;const p=this.player;
   const nextWave=1+Math.floor(this.time/45);if(nextWave>this.wave){this.wave=nextWave;this.event('wave',{wave:this.wave});if(this.wave%4===0&&this.enemies.length<110)this.spawnEnemy('boss');}
-  p.hit=Math.max(0,p.hit-dt);p.fire=Math.max(0,p.fire-dt);const mx=input.x||0,my=input.y||0,len=Math.hypot(mx,my);
+  p.hit=Math.max(0,p.hit-dt);const mx=input.x||0,my=input.y||0,len=Math.hypot(mx,my);
   if(len){p.x+=mx/Math.max(1,len)*this.stats.speed*dt;p.y+=my/Math.max(1,len)*this.stats.speed*dt;p.angle=Math.atan2(my,mx);}
   this.updateBody(dt);
   if(input.fire&&input.aim)this.fireWeapon(input.aim);else if(input.auto)this.fireWeapon(null,true);
